@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1em;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: right;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-draft {
+            background: #ffd700;
+            color: #856404;
+        }
+
+        .status-completed {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-in-progress {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content-preview {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+<button class="logout-btn" onclick="logout()">خروج</button>
+
+<div class="container">
+    <h1>🎛️ پنل مدیریت سیستم</h1>
+
+    <div class="stats" id="stats">
+        <div class="stat-card">
+            <h3 id="totalUsers">0</h3>
+            <p>تعداد کاربران</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="totalArticles">0</h3>
+            <p>تعداد مقالات</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="completedArticles">0</h3>
+            <p>مقالات تکمیل شده</p>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('users')">👥 کاربران</button>
+        <button class="tab" onclick="switchTab('articles')">📝 مقالات</button>
+    </div>
+
+    <div id="users" class="tab-content active">
+        <div class="loading" id="usersLoading">در حال بارگذاری...</div>
+        <div id="usersError" class="error" style="display: none;"></div>
+        <table id="usersTable" style="display: none;">
+            <thead>
+            <tr>
+                <th>شناسه</th>
+                <th>نام کاربری</th>
+                <th>ایمیل</th>
+                <th>تاریخ ثبت‌نام</th>
+            </tr>
+            </thead>
+            <tbody id="usersBody"></tbody>
+        </table>
+    </div>
+
+    <div id="articles" class="tab-content">
+        <div class="loading" id="articlesLoading">در حال بارگذاری...</div>
+        <div id="articlesError" class="error" style="display: none;"></div>
+        <table id="articlesTable" style="display: none;">
+            <thead>
+            <tr>
+                <th>شناسه مقاله</th>
+                <th>عنوان</th>
+                <th>محتوا</th>
+                <th>وضعیت</th>
+                <th>نویسنده</th>
+                <th>ایمیل نویسنده</th>
+                <th>تاریخ ایجاد</th>
+                <th>آخرین ویرایش</th>
+            </tr>
+            </thead>
+            <tbody id="articlesBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080/api';
+
+    // بررسی لاگین ادمین
+    function checkAdminAuth() {
+        const token = localStorage.getItem('token');
+        const userRole = localStorage.getItem('userRole');
+
+        if (!token || userRole !== 'ADMIN') {
+            alert('دسترسی غیرمجاز! لطفاً با حساب ادمین وارد شوید.');
+            window.location.href = 'login.html';
+            return false;
+        }
+        return true;
+    }
+
+    // خروج
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    // تغییر تب
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+        event.target.classList.add('active');
+        document.getElementById(tabName).classList.add('active');
+    }
+
+    // دریافت لیست کاربران
+    async function loadUsers() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/users`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) throw new Error('خطا در دریافت اطلاعات کاربران');
+
+            const users = await response.json();
+            document.getElementById('totalUsers').textContent = users.length;
+
+            const tbody = document.getElementById('usersBody');
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${new Date(user.createdAt).toLocaleDateString('fa-IR')}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('usersLoading').style.display = 'none';
+            document.getElementById('usersTable').style.display = 'table';
+        } catch (error) {
+            document.getElementById('usersLoading').style.display = 'none';
+            document.getElementById('usersError').textContent = error.message;
+            document.getElementById('usersError').style.display = 'block';
+        }
+    }
+
+    // دریافت لیست مقالات
+    async function loadArticles() {
+        try {
+            const response = await fetch(`${API_BASE}/admin/articles`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) throw new Error('خطا در دریافت اطلاعات مقالات');
+
+            const articles = await response.json();
+            document.getElementById('totalArticles').textContent = articles.length;
+            document.getElementById('completedArticles').textContent =
+                articles.filter(a => a.status === 'COMPLETED').length;
+
+            const tbody = document.getElementById('articlesBody');
+            tbody.innerHTML = articles.map(article => `
+                <tr>
+                    <td>${article.id}</td>
+                    <td>${article.title}</td>
+                    <td class="content-preview">${article.content}</td>
+                    <td><span class="status-badge status-${article.status.toLowerCase()}">${getStatusText(article.status)}</span></td>
+                    <td>${article.username}</td>
+                    <td>${article.userEmail}</td>
+                    <td>${new Date(article.createdAt).toLocaleDateString('fa-IR')}</td>
+                    <td>${new Date(article.updatedAt).toLocaleDateString('fa-IR')}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('articlesLoading').style.display = 'none';
+            document.getElementById('articlesTable').style.display = 'table';
+        } catch (error) {
+            document.getElementById('articlesLoading').style.display = 'none';
+            document.getElementById('articlesError').textContent = error.message;
+            document.getElementById('articlesError').style.display = 'block';
+        }
+    }
+
+    function getStatusText(status) {
+        const statusMap = {
+            'DRAFT': 'پیش‌نویس',
+            'IN_PROGRESS': 'در حال نوشتن',
+            'COMPLETED': 'تکمیل شده'
+        };
+        return statusMap[status] || status;
+    }
+
+    // بارگذاری اولیه
+    window.onload = () => {
+        if (checkAdminAuth()) {
+            loadUsers();
+            loadArticles();
+        }
+    };
+</script>
+</body>
+</html>

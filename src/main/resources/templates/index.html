@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست API مقالم</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .search-btn:active {
+            transform: translateY(0);
+        }
+
+        .clear-btn {
+            padding: 15px 30px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .clear-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .results-info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .article-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .download-buttons {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.download-btn {
+    padding: 8px 16px;
+    background: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.download-btn:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+}
+
+.download-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .article-title {
+            font-size: 1.4em;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .article-author {
+            color: #667eea;
+            font-size: 1em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .article-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .keyword-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .article-abstract {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .article-description {
+            color: #888;
+            font-size: 0.9em;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .article-date {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .no-results {
+            text-align: center;
+            color: white;
+            font-size: 1.3em;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            display: none;
+        }
+
+        .no-results.active {
+            display: block;
+        }
+
+        .error-message {
+            background: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .response pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        .success {
+            border-left-color: #28a745;
+        }
+
+        .error {
+            border-left-color: #dc3545;
+        }
+
+        .token-display {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid #ffc107;
+            word-break: break-all;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status.pending {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .status.completed {
+            background: #28a745;
+            color: white;
+        }
+
+        .status.failed {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🚀 تست API مقالم</h1>
+    </div>
+
+    <!-- جستجو -->
+    <div class="search-box">
+        <div class="search-input-wrapper">
+            <input
+                    type="text"
+                    id="searchInput"
+                    class="search-input"
+                    placeholder="عنوان، نویسنده، کلمات کلیدی، چکیده یا توضیحات را جستجو کنید..."
+                    autocomplete="off"
+            >
+            <button class="search-btn" onclick="searchArticles()">جستجو</button>
+            <button class="clear-btn" onclick="clearSearch()">پاک کردن</button>
+        </div>
+        <div class="results-info" id="resultsInfo"></div>
+    </div>
+
+    <div class="error-message" id="errorMessage"></div>
+    <div class="loading" id="loading">در حال جستجو...</div>
+    <div class="no-results" id="noResults">هیچ مقاله‌ای یافت نشد 😔</div>
+
+    <div class="results-container" id="resultsContainer"></div>
+
+    <!-- ثبت نام -->
+    <div class="section">
+        <h2>📝 ثبت نام کاربر جدید</h2>
+        <div class="form-group">
+            <label>نام کاربری:</label>
+            <input type="text" id="reg-username" placeholder="testuser">
+        </div>
+        <div class="form-group">
+            <label>ایمیل:</label>
+            <input type="email" id="reg-email" placeholder="test@example.com">
+        </div>
+        <div class="form-group">
+            <label>رمز عبور:</label>
+            <input type="password" id="reg-password" placeholder="123456">
+        </div>
+        <div class="form-group">
+            <label>تکرار رمز عبور:</label>
+            <input type="password" id="reg-confirm-password" placeholder="123456">
+        </div>
+        <div class="form-group">
+            <label>نام کامل:</label>
+            <input type="text" id="reg-fullname" placeholder="کاربر تستی">
+        </div>
+        <button onclick="register()">ثبت نام</button>
+        <div id="reg-response" class="response" style="display:none;"></div>
+    </div>
+
+    <!-- ورود -->
+    <div class="section">
+        <h2>🔐 ورود به سیستم</h2>
+        <div class="form-group">
+            <label>نام کاربری:</label>
+            <input type="text" id="login-username" placeholder="testuser">
+        </div>
+        <div class="form-group">
+            <label>رمز عبور:</label>
+            <input type="password" id="login-password" placeholder="123456">
+        </div>
+        <button onclick="login()">ورود</button>
+        <div id="login-response" class="response" style="display:none;"></div>
+        <div id="token-display" class="token-display" style="display:none;">
+            <strong>توکن شما:</strong>
+            <div id="token-value"></div>
+        </div>
+    </div>
+
+    <!-- ساخت مقاله -->
+    <div class="section">
+        <h2>✍️ ساخت مقاله جدید</h2>
+        <div class="form-group">
+            <label>عنوان:</label>
+            <input type="text" id="article-title" placeholder="عنوان مقاله">
+        </div>
+        <div class="form-group">
+            <label>توضیحات:</label>
+            <textarea id="article-description" placeholder="توضیحات مقاله"></textarea>
+        </div>
+        <div class="form-group">
+            <label>کلمات کلیدی:</label>
+            <input type="text" id="article-keywords" placeholder="هوش مصنوعی, برنامه نویسی, تکنولوژی">
+        </div>
+        <div class="form-group">
+            <label>نویسنده:</label>
+            <input id="article-author" placeholder="نام نویسنده">
+        </div>
+        <div class="form-group">
+            <label>زبان:</label>
+            <input type="text" id="article-language" placeholder="fa" value="fa">
+        </div>
+        <button onclick="createArticle()">ساخت مقاله</button>
+        <div id="article-response" class="response" style="display:none;"></div>
+    </div>
+</div>
+
+
+<script>
+    const API_BASE = 'http://localhost:8080/api';
+    let currentSearchTerm = '';
+
+    // بارگذاری اولیه
+    window.addEventListener('DOMContentLoaded', () => {
+        loadAllArticles();
+
+        // جستجو با Enter
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchArticles();
+            }
+        });
+    });
+
+    function showResponse(elementId, data, isError = false) {
+        const element = document.getElementById(elementId);
+        element.style.display = 'block';
+        element.className = 'response ' + (isError ? 'error' : 'success');
+        element.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+    }
+
+    async function register() {
+        const password = document.getElementById('reg-password').value;
+        const confirmPassword = document.getElementById('reg-confirm-password').value;
+
+        if (password !== confirmPassword) {
+            showResponse('reg-response', { error: 'رمز عبور و تکرار آن یکسان نیستند' }, true);
+            return;
+        }
+
+        const data = {
+            username: document.getElementById('reg-username').value,
+            email: document.getElementById('reg-email').value,
+            password: password,
+            confirmPassword: confirmPassword,
+            fullName: document.getElementById('reg-fullname').value
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            showResponse('reg-response', result, !response.ok);
+        } catch (error) {
+            showResponse('reg-response', { error: error.message }, true);
+        }
+    }
+
+    async function login() {
+        const data = {
+            usernameOrEmail: document.getElementById('login-username').value,
+            password: document.getElementById('login-password').value
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.token) {
+                localStorage.setItem('token', result.token);
+                document.getElementById('token-display').style.display = 'block';
+                document.getElementById('token-value').textContent = result.token;
+
+                // بارگذاری مقالات بعد از ورود
+                loadAllArticles();
+            }
+
+            showResponse('login-response', result, !response.ok);
+        } catch (error) {
+            showResponse('login-response', { error: error.message }, true);
+        }
+    }
+
+   function createArticleCard(article) {
+    const card = document.createElement('div');
+    card.className = 'article-card';
+
+    const title = highlightText(article.title || 'بدون عنوان');
+    const author = highlightText(article.author || 'نامشخص');
+    const description = article.description ? highlightText(article.description) : '';
+    const content = article.content ? highlightText(article.content) : '';
+
+    let keywordsHTML = '';
+    if (article.keywords && article.keywords.length > 0) {
+        keywordsHTML = article.keywords.map(kw =>
+            `<span class="keyword">${highlightText(kw)}</span>`
+        ).join('');
+    }
+
+    // دکمه‌های دانلود فقط برای مقالات تکمیل شده
+    const downloadButtons = (article.status === 'COMPLETED' || article.isPublished) ? `
+        <div class="download-buttons">
+            <button class="download-btn" onclick="downloadArticle('${article.id}', 'pdf')">📥 دانلود PDF</button>
+            <button class="download-btn" onclick="downloadArticle('${article.id}', 'html')">📄 دانلود HTML</button>
+        </div>
+    ` : '';
+
+    // دکمه تغییر وضعیت برای تست
+    const testButton = (article.status !== 'COMPLETED') ? `
+        <button class="download-btn" style="background: #ff9800;"
+                onclick="changeArticleStatus('${article.id}', 'COMPLETED')">
+            ✓ تایید انتشار (تست)
+        </button>
+    ` : '';
+
+    card.innerHTML = `
+        <div class="article-title">${title}</div>
+        <div class="article-author">نویسنده: ${author}</div>
+        ${keywordsHTML ? `<div class="article-keywords">${keywordsHTML}</div>` : ''}
+        ${description ? `<div class="article-description">${description}</div>` : ''}
+        ${content ? `<div class="article-abstract">${content.substring(0, 200)}...</div>` : ''}
+        <div class="article-date">
+            <span class="status ${(article.status || 'pending').toLowerCase()}">${article.status || 'PENDING'}</span>
+            ${article.createdAt ? ` • ${formatDate(article.createdAt)}` : ''}
+        </div>
+        ${downloadButtons}
+        ${testButton}
+    `;
+
+    return card;
+}
+
+
+    // بارگذاری همه مقالات
+    async function loadAllArticles() {
+        showLoading(true);
+        hideError();
+
+        try {
+            const response = await fetch(`${API_BASE}/articles`);
+
+            if (!response.ok) {
+                throw new Error('خطا در دریافت مقالات');
+            }
+
+            const articles = await response.json();
+            displayResults(articles, '');
+        } catch (error) {
+            showError('خطا در بارگذاری مقالات: ' + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // جستجوی مقالات
+async function searchArticles() {
+    const searchTerm = document.getElementById('searchInput').value.trim();
+    currentSearchTerm = searchTerm;
+
+    showLoading(true);
+    hideError();
+
+    try {
+        const token = localStorage.getItem('token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        // اگر توکن وجود داشت، اضافه کن
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const url = searchTerm
+            ? `${API_BASE}/articles/search?query=${encodeURIComponent(searchTerm)}`
+            : `${API_BASE}/articles`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: headers
+        });
+
+        if (!response.ok) {
+            throw new Error('خطا در جستجو');
+        }
+
+        const articles = await response.json();
+        displayResults(articles, searchTerm);
+    } catch (error) {
+        showError('خطا در جستجو: ' + error.message);
+    } finally {
+        showLoading(false);
+    }
+}
+
+// دانلود مقاله
+async function downloadArticle(id, format) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('لطفاً ابتدا وارد شوید');
+        return;
+    }
+
+    const url = `${API_BASE}/articles/${id}/download?format=${format}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('خطا در دریافت فایل');
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `article_${id}.${format === 'pdf' ? 'pdf' : 'html'}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+        alert('خطا در دانلود فایل: ' + error.message);
+    }
+}
+
+
+// بارگذاری همه مقالات
+async function loadAllArticles() {
+    showLoading(true);
+    hideError();
+
+    try {
+        const token = localStorage.getItem('token');
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${API_BASE}/articles`, {
+            method: 'GET',
+            headers: headers
+        });
+
+        if (!response.ok) {
+            throw new Error('خطا در دریافت مقالات');
+        }
+
+        const articles = await response.json();
+        displayResults(articles, '');
+    } catch (error) {
+        showError('خطا در بارگذاری مقالات: ' + error.message);
+    } finally {
+        showLoading(false);
+    }
+}
+
+
+    // نمایش نتایج
+    function displayResults(articles, searchTerm) {
+        const container = document.getElementById('resultsContainer');
+        const noResults = document.getElementById('noResults');
+        const resultsInfo = document.getElementById('resultsInfo');
+
+        container.innerHTML = '';
+
+        if (articles.length === 0) {
+            noResults.classList.add('active');
+            resultsInfo.textContent = '';
+            return;
+        }
+
+        noResults.classList.remove('active');
+
+        if (searchTerm) {
+            resultsInfo.textContent = `${articles.length} مقاله یافت شد برای "${searchTerm}"`;
+        } else {
+            resultsInfo.textContent = `مجموع ${articles.length} مقاله`;
+        }
+
+        articles.forEach(article => {
+            const card = createArticleCard(article, searchTerm);
+            container.appendChild(card);
+        });
+    }
+
+    // تغییر وضعیت مقاله (برای تست)
+async function changeArticleStatus(id, status) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('لطفاً ابتدا وارد شوید');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/articles/${id}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: status })
+        });
+
+        if (!response.ok) throw new Error('خطا در تغییر وضعیت');
+
+        alert('وضعیت مقاله تغییر کرد');
+        // رفرش نتایج
+        if (document.getElementById('search-results').children.length > 0) {
+            searchArticles();
+        } else {
+            loadAllArticles();
+        }
+    } catch (error) {
+        alert('خطا: ' + error.message);
+    }
+}
+// دکمه تغییر وضعیت برای تست
+const testButton = (article.status !== 'COMPLETED') ? `
+    <button class="download-btn" style="background: #ff9800;"
+            onclick="changeArticleStatus('${article.id}', 'COMPLETED')">
+        ✓ تایید انتشار (تست)
+    </button>
+` : '';
+
+
+    // ساخت کارت مقاله
+    function createArticleCard(article, searchTerm) {
+        const card = document.createElement('div');
+        card.className = 'article-card';
+
+        const title = highlightText(article.title || '', searchTerm);
+        const author = highlightText(article.author?.username || article.author || 'نامشخص', searchTerm);
+        const description = highlightText(article.description || '', searchTerm);
+        const content = highlightText(article.content || '', searchTerm);
+
+        // پردازش کلمات کلیدی
+        const keywords = article.keywords ?
+            (Array.isArray(article.keywords) ? article.keywords : article.keywords.split(',').map(k => k.trim()))
+            : [];
+        const keywordsHTML = keywords.map(keyword =>
+            `<span class="keyword-tag">${highlightText(keyword, searchTerm)}</span>`
+        ).join('');
+
+        card.innerHTML = `
+            <div class="article-title">${title}</div>
+            <div class="article-author">نویسنده: ${author}</div>
+            ${keywordsHTML ? `<div class="article-keywords">${keywordsHTML}</div>` : ''}
+            ${description ? `<div class="article-description">${description}</div>` : ''}
+            ${content ? `<div class="article-abstract">${content.substring(0, 200)}...</div>` : ''}
+            <div class="article-date">
+                <span class="status ${(article.status || 'pending').toLowerCase()}">${article.status || 'PENDING'}</span>
+                ${article.createdAt ? ` • ${formatDate(article.createdAt)}` : ''}
+            </div>
+        `;
+
+        return card;
+    }
+
+    // هایلایت متن
+    function highlightText(text, searchTerm) {
+        if (!text) return '';
+        if (!searchTerm) return text;
+
+        const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+        return text.replace(regex, '<span class="highlight">$1</span>');
+    }
+
+    // Escape regex
+    function escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // فرمت تاریخ
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fa-IR');
+    }
+
+    // پاک کردن جستجو
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        currentSearchTerm = '';
+        loadAllArticles();
+    }
+
+    // نمایش loading
+    function showLoading(show) {
+        const loading = document.getElementById('loading');
+        if (show) {
+            loading.classList.add('active');
+        } else {
+            loading.classList.remove('active');
+        }
+    }
+
+    // نمایش خطا
+    function showError(message) {
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.textContent = message;
+        errorDiv.classList.add('active');
+    }
+
+    // مخفی کردن خطا
+    function hideError() {
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.classList.remove('active');
+    }
+</script>
+</body>
+</html>
